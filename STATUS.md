@@ -42,6 +42,21 @@ gitlab_review_mcp/
 - **Output**: comment_id, created_at
 - **Opis**: Dodaje komentarz do merge requesta
 
+#### 4. **post_merge_request_inline_comment**
+- **Input**: `project_id` (string), `mr_iid` (number), `body` (string), `file_path` (string), `line_number` (number), `line_type` (string, opcjonalny)
+- **Output**: comment_id, created_at, file_path, line_number, line_type
+- **Opis**: Dodaje komentarz inline do konkretnej linii w pliku. Rozpoczyna dyskusję w wybranym miejscu kodu
+
+#### 5. **save_review_file** ⭐ NOWE
+- **Input**: `workspace_root` (string), `project_id` (string), `mr_iid` (number)
+- **Output**: success, review_file_path, message
+- **Opis**: Pobiera diff z MR i tworzy plik review `.gitlab_review/mr-{iid}-review.md` z diffem i szablonem komentarzy. Automatycznie dodaje katalog do `.gitignore`
+
+#### 6. **publish_review_comments** ⭐ NOWE
+- **Input**: `review_file_path` (string), `project_id` (string), `mr_iid` (number)
+- **Output**: success, published, skipped, errors, message
+- **Opis**: Parsuje plik review i wysyła wszystkie komentarze z `ACCEPT=true` jako inline comments do GitLab
+
 ### ✨ Kluczowe cechy:
 
 ✅ **Pełna zgodność z MCP** (strict mode)
@@ -103,6 +118,9 @@ Po skonfigurowaniu możesz prosić Copilota:
 - _"Zrób review merge requesta 42 w projekcie my-group/my-project"_
 - _"Pokaż zmiany w MR 15 dla projektu 123"_
 - _"Dodaj komentarz do MR 10: 'LGTM, świetna robota!'"_
+- _"Dodaj komentarz inline w pliku src/index.ts na linii 50 w MR 10: 'Tutaj brakuje error handlingu'"_
+- _"Pobierz diff z MR 42 do pliku review (workspace: /Users/user/project)"_ ⭐ NOWE
+- _"Wyślij komentarze z pliku .gitlab_review/mr-42-review.md do GitLab"_ ⭐ NOWE
 
 Copilot automatycznie użyje odpowiednich narzędzi MCP.
 
@@ -128,16 +146,19 @@ Copilot automatycznie użyje odpowiednich narzędzi MCP.
 3. **mcp-config.example.json** - Przykład konfiguracji
 4. **Inline comments** - Kod dobrze skomentowany
 
-### 🎯 Projekt gotowy do użycia!
+### 🎯 **Projekt gotowy do użycia!**
 
 Wszystkie wymagania zostały spełnione:
-- ✅ 3 narzędzia MCP działają zgodnie ze specyfikacją
+- ✅ 6 narzędzi MCP działają zgodnie ze specyfikacją
 - ✅ Komunikacja przez stdio
 - ✅ Bezpośrednie API calls do GitLab
 - ✅ Poprawne JSON Schema
 - ✅ TypeScript z pełnym typowaniem
 - ✅ Obsługa błędów
 - ✅ Walidacja inputów
+- ✅ Komentarze inline z pozycjonowaniem w kodzie
+- ✅ Review workflow z plikiem diff + komentarze ⭐ NOWE
+- ✅ Automatyczne zarządzanie .gitignore ⭐ NOWE
 - ✅ Gotowy do uruchomienia przez: `node dist/index.js`
 
 **Powodzenia z code review GitLab MR przez Copilota! 🚀**

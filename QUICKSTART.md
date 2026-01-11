@@ -89,11 +89,13 @@ Po skonfigurowaniu możesz używać Copilota do code review:
 - "Zrób review merge requesta 42 w projekcie my-group/my-project"
 - "Pokaż zmiany w MR 15 dla projektu 123"
 - "Dodaj komentarz do MR 10 w projekcie team/backend: 'LGTM, świetna robota!'"
+- "Dodaj komentarz inline w pliku src/index.ts na linii 50 w MR 10: 'Tutaj powinien być error handling'"
 
 **Dostępne narzędzia:**
 1. `get_merge_request` - pobiera szczegóły MR
 2. `get_merge_request_diff` - pobiera zmiany/diff
-3. `post_merge_request_comment` - dodaje komentarz
+3. `post_merge_request_comment` - dodaje komentarz ogólny
+4. `post_merge_request_inline_comment` - dodaje komentarz inline w konkretnej linii kodu
 
 ### Rozwiązywanie problemów
 
