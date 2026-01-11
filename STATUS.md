@@ -47,12 +47,17 @@ gitlab_review_mcp/
 - **Output**: comment_id, created_at, file_path, line_number, line_type
 - **Opis**: Dodaje komentarz inline do konkretnej linii w pliku. Rozpoczyna dyskusję w wybranym miejscu kodu
 
-#### 5. **save_review_file** ⭐ NOWE
+#### 5. **post_merge_request_inline_comments_batch** ⭐ NOWE
+- **Input**: `project_id` (string), `mr_iid` (number), `comments` (array)
+- **Output**: published, errors, failed_comments
+- **Opis**: Dodaje wiele komentarzy inline naraz - batch operation. Znacznie szybsze niż pojedyncze wywołania
+
+#### 6. **save_review_file**
 - **Input**: `workspace_root` (string), `project_id` (string), `mr_iid` (number)
 - **Output**: success, review_file_path, message
 - **Opis**: Pobiera diff z MR i tworzy plik review `.gitlab_review/mr-{iid}-review.md` z diffem i szablonem komentarzy. Automatycznie dodaje katalog do `.gitignore`
 
-#### 6. **publish_review_comments** ⭐ NOWE
+#### 7. **publish_review_comments**
 - **Input**: `review_file_path` (string), `project_id` (string), `mr_iid` (number)
 - **Output**: success, published, skipped, errors, message
 - **Opis**: Parsuje plik review i wysyła wszystkie komentarze z `ACCEPT=true` jako inline comments do GitLab
@@ -149,7 +154,7 @@ Copilot automatycznie użyje odpowiednich narzędzi MCP.
 ### 🎯 **Projekt gotowy do użycia!**
 
 Wszystkie wymagania zostały spełnione:
-- ✅ 6 narzędzi MCP działają zgodnie ze specyfikacją
+- ✅ 7 narzędzi MCP działają zgodnie ze specyfikacją
 - ✅ Komunikacja przez stdio
 - ✅ Bezpośrednie API calls do GitLab
 - ✅ Poprawne JSON Schema
@@ -157,8 +162,9 @@ Wszystkie wymagania zostały spełnione:
 - ✅ Obsługa błędów
 - ✅ Walidacja inputów
 - ✅ Komentarze inline z pozycjonowaniem w kodzie
-- ✅ Review workflow z plikiem diff + komentarze ⭐ NOWE
-- ✅ Automatyczne zarządzanie .gitignore ⭐ NOWE
+- ✅ Batch operation dla wielu komentarzy naraz ⭐ NOWE
+- ✅ Review workflow z plikiem diff + komentarze
+- ✅ Automatyczne zarządzanie .gitignore
 - ✅ Gotowy do uruchomienia przez: `node dist/index.js`
 
 **Powodzenia z code review GitLab MR przez Copilota! 🚀**

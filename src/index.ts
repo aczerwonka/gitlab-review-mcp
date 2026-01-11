@@ -183,6 +183,68 @@ class GitLabClient {
     };
   }
 
+  async postMergeRequestInlineCommentsBatch(
+    projectId: string,
+    mrIid: number,
+    comments: Array<{
+      body: string;
+      file_path: string;
+      line_number: number;
+      line_type?: "new" | "old";
+    }>
+  ) {
+    // Get MR details once for all comments
+    const mr = await this.request<any>(
+      `/projects/${encodeURIComponent(projectId)}/merge_requests/${mrIid}`
+    );
+
+    const results = {
+      published: 0,
+      errors: 0,
+      failed_comments: [] as Array<{ comment: any; error: string }>,
+    };
+
+    for (const comment of comments) {
+      try {
+        const lineType = comment.line_type || "new";
+        const position = {
+          base_sha: mr.diff_refs.base_sha,
+          start_sha: mr.diff_refs.start_sha,
+          head_sha: mr.diff_refs.head_sha,
+          position_type: "text",
+          old_path: comment.file_path,
+          new_path: comment.file_path,
+          old_line: lineType === "old" ? comment.line_number : null,
+          new_line: lineType === "new" ? comment.line_number : null,
+        };
+
+        await this.request<any>(
+          `/projects/${encodeURIComponent(projectId)}/merge_requests/${mrIid}/discussions`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              body: comment.body,
+              position,
+            }),
+          }
+        );
+
+        results.published++;
+        console.error(`Published comment to ${comment.file_path}:${comment.line_number}`);
+      } catch (error) {
+        results.errors++;
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        results.failed_comments.push({
+          comment,
+          error: errorMessage,
+        });
+        console.error(`Failed to publish comment to ${comment.file_path}:${comment.line_number}:`, errorMessage);
+      }
+    }
+
+    return results;
+  }
+
   // Review workflow methods
   async ensureReviewDir(workspaceRoot: string): Promise<string> {
     const reviewDir = path.join(workspaceRoot, ".gitlab_review");
@@ -462,6 +524,51 @@ const tools: Tool[] = [
     },
   },
   {
+    name: "post_merge_request_inline_comments_batch",
+    description: "Post multiple inline comments at once to a GitLab merge request. Efficient way to add many code review comments in a single operation.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        project_id: {
+          type: "string",
+          description: "GitLab project ID or path (e.g., 'group/project' or '123')",
+        },
+        mr_iid: {
+          type: "number",
+          description: "Merge request IID (internal ID visible in GitLab UI)",
+        },
+        comments: {
+          type: "array",
+          description: "Array of inline comments to post",
+          items: {
+            type: "object",
+            properties: {
+              body: {
+                type: "string",
+                description: "Comment text/body (supports Markdown)",
+              },
+              file_path: {
+                type: "string",
+                description: "Path to the file (e.g., 'src/index.ts')",
+              },
+              line_number: {
+                type: "number",
+                description: "Line number where the comment should be placed",
+              },
+              line_type: {
+                type: "string",
+                description: "Whether the line is 'new' or 'old' (default: 'new')",
+                enum: ["new", "old"],
+              },
+            },
+            required: ["body", "file_path", "line_number"],
+          },
+        },
+      },
+      required: ["project_id", "mr_iid", "comments"],
+    },
+  },
+  {
     name: "save_review_file",
     description: "Download MR diff and create a review file (.gitlab_review/mr-{iid}-review.md) with structured format for adding comments. The file includes diff and comment templates.",
     inputSchema: {
@@ -622,6 +729,65 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         file_path,
         line_number,
         line_type
+      );
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    }
+
+    if (name === "post_merge_request_inline_comments_batch") {
+      const {
+        project_id,
+        mr_iid,
+        comments
+      } = args as {
+        project_id: string;
+        mr_iid: number;
+        comments: Array<{
+          body: string;
+          file_path: string;
+          line_number: number;
+          line_type?: "new" | "old";
+        }>;
+      };
+
+      if (!project_id || typeof project_id !== "string") {
+        throw new Error("project_id must be a non-empty string");
+      }
+      if (!mr_iid || typeof mr_iid !== "number") {
+        throw new Error("mr_iid must be a number");
+      }
+      if (!Array.isArray(comments) || comments.length === 0) {
+        throw new Error("comments must be a non-empty array");
+      }
+
+      // Validate each comment
+      for (let i = 0; i < comments.length; i++) {
+        const comment = comments[i];
+        if (!comment.body || typeof comment.body !== "string") {
+          throw new Error(`Comment ${i}: body must be a non-empty string`);
+        }
+        if (!comment.file_path || typeof comment.file_path !== "string") {
+          throw new Error(`Comment ${i}: file_path must be a non-empty string`);
+        }
+        if (typeof comment.line_number !== "number" || comment.line_number < 1) {
+          throw new Error(`Comment ${i}: line_number must be a positive number`);
+        }
+        if (comment.line_type && comment.line_type !== "new" && comment.line_type !== "old") {
+          throw new Error(`Comment ${i}: line_type must be either 'new' or 'old'`);
+        }
+      }
+
+      const result = await gitlabClient.postMergeRequestInlineCommentsBatch(
+        project_id,
+        mr_iid,
+        comments
       );
 
       return {

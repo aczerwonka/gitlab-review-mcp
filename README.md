@@ -71,7 +71,32 @@ Dodaje komentarz inline do konkretnej linii w pliku w ramach merge requesta. Roz
 - `line_number` - numer linii
 - `line_type` - typ linii (new/old)
 
-### 5. save_review_file
+### 5. post_merge_request_inline_comments_batch
+Dodaje wiele komentarzy inline naraz (batch operation) - szybsze niż pojedyncze wywołania.
+
+**Input:**
+- `project_id` (string) - ID projektu lub ścieżka
+- `mr_iid` (number) - IID merge requesta
+- `comments` (array) - tablica komentarzy, każdy z:
+  - `body` (string) - treść komentarza
+  - `file_path` (string) - ścieżka do pliku
+  - `line_number` (number) - numer linii
+  - `line_type` (string, opcjonalny) - 'new' lub 'old'
+
+**Output:**
+- `published` - liczba wysłanych komentarzy
+- `errors` - liczba błędów
+- `failed_comments` - lista nieudanych komentarzy z błędami
+
+**Przykład:**
+```
+"Dodaj 3 komentarze do MR 42:
+- src/index.ts:42 - brak walidacji
+- src/api.ts:100 - użyj async/await  
+- src/utils.ts:200 - security issue"
+```
+
+### 6. save_review_file
 Pobiera diff z MR i tworzy plik review z możliwością dodawania komentarzy.
 
 **Input:**
@@ -84,9 +109,9 @@ Pobiera diff z MR i tworzy plik review z możliwością dodawania komentarzy.
 - `review_file_path` - ścieżka do utworzonego pliku review
 - `message` - informacja o kolejnych krokach
 
-**Opis:** Tworzy katalog `.gitlab_review/` (automatycznie dodawany do `.gitignore`) i zapisuje plik `mr-{iid}-review.md` zawierający diff i szablon do komentarzy w formacie `[COMMENT]...[/COMMENT]`.
+**Opis:** Tworzy katalog `.gitlab_review/` (automatycznie dodawany do `.gitignore`) i zapisuje plik `mr-{iid}-review.md` zawierający diff i szablon do komentarzy w formacie `REVIEW_COMMENT:`.
 
-### 6. publish_review_comments
+### 7. publish_review_comments
 Wysyła zaakceptowane komentarze z pliku review do GitLab.
 
 **Input:**

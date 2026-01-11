@@ -62,6 +62,29 @@ REVIEW_COMMENT: Treść komentarza [ACCEPT=true] LINE:42
 REVIEW_COMMENT: Treść komentarza [ACCEPT=true] LINE:42 TYPE:old
 ```
 
+### Batch - wiele komentarzy naraz (JSON)
+```json
+{
+  "project_id": "group/project",
+  "mr_iid": 42,
+  "comments": [
+    {
+      "body": "Brak walidacji parametru",
+      "file_path": "src/index.ts",
+      "line_number": 42,
+      "line_type": "new"
+    },
+    {
+      "body": "Dlaczego usunięto?",
+      "file_path": "src/config.ts",
+      "line_number": 80,
+      "line_type": "old"
+    }
+  ]
+}
+```
+→ Narzędzie: `post_merge_request_inline_comments_batch`
+
 ## Zasady
 
 - **REVIEW_COMMENT:** - prefix (WIELKIE LITERY)
@@ -157,6 +180,51 @@ try {
 1. "Pobierz diff z MR 42 do pliku"
 2. Ręcznie dodajesz `REVIEW_COMMENT:` nad problematycznymi liniami
 3. "Wyślij komentarze z .gitlab_review/mr-42-review.md"
+
+**Batch (wiele komentarzy naraz):**
+1. AI/Ty przygotowujesz listę komentarzy w JSON
+2. Wywołujesz `post_merge_request_inline_comments_batch`
+3. Wszystkie komentarze wysłane jednocześnie (oszczędność czasu)
+
+## Narzędzia MCP
+
+### 1. post_merge_request_inline_comment
+Dodaje pojedynczy komentarz inline
+
+### 2. post_merge_request_inline_comments_batch ⭐ NOWE
+Dodaje wiele komentarzy inline naraz - szybsze niż pojedyncze wywołania
+
+**Input:**
+- `project_id` - ID projektu
+- `mr_iid` - numer MR
+- `comments` - tablica obiektów: `{body, file_path, line_number, line_type?}`
+
+**Output:**
+```json
+{
+  "published": 5,
+  "errors": 0,
+  "failed_comments": []
+}
+```
+
+**Przykład użycia:**
+```
+"Dodaj 5 komentarzy do MR 42: 
+1. src/index.ts:42 - brak walidacji
+2. src/api.ts:100 - użyj async/await
+3. src/utils.ts:200 - security issue
+4. src/config.ts:50 - hardcoded value
+5. src/types.ts:30 - brak export"
+```
+
+AI automatycznie sformatuje jako batch request.
+
+### 3. save_review_file
+Tworzy plik review z diffem
+
+### 4. publish_review_comments
+Publikuje komentarze z pliku review
 
 ## Parser
 
