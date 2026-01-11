@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "gitlab-review": {
+      "command": "node",
+      "args": ["/Users/arek/dev/gitlab_review_mcp/dist/index.js"],
+      "env": {
+        "GITLAB_BASE_URL": "https://gitlab.example.com",
+        "GITLAB_TOKEN": "your-gitlab-personal-access-token-here"
+      }
+    }
+  }
+}
+
